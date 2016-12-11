@@ -320,7 +320,7 @@ func (f *Firmata) process() {
 				return
 			}
 			port := cmd & 0x0F
-			portValue := buf[1] | (buf[2] << 7)
+			portValue := buf[0] | (buf[1] << 7)
 			for i := 0; i < 8; i++ {
 				pinNumber := int((8*byte(port) + byte(i)))
 				if len(f.pins) > pinNumber {

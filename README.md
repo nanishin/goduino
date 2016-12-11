@@ -5,6 +5,8 @@ Goduino uses [Firmata](https://github.com/firmata/protocol) protocol for [Arduin
 
 [![GoDoc](http://godoc.org/github.com/argandas/goduino?status.svg)](http://godoc.org/github.com/argandas/goduino)
 
+Referenced from platforms/firmata of [gobot](https://github.com/hybridgroup/gobot)
+
 ## Prerequisites
 
 1. Download and install the [Arduio IDE](http://www.arduino.cc/en/Main/Software)
