@@ -130,8 +130,10 @@ func (f *Firmata) DigitalWrite(pin int, value int) error {
 	f.pins[pin].Value = value
 	// Build command
 	for i := byte(0); i < 8; i++ {
-		if f.pins[8*port+i].Value != 0 {
-			portValue = portValue | (1 << i)
+		if (int)(8*port+i) < len(f.pins) {
+            if f.pins[8*port+i].Value != 0 {
+                portValue = portValue | (1 << i)
+            }
 		}
 	}
 	return f.sendCommand([]byte{byte(DigitalMessage) | port, portValue & 0x7F, (portValue >> 7) & 0x7F})
