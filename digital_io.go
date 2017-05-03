@@ -19,7 +19,8 @@ func (ino *Goduino) DigitalWrite(pin, value int) error {
 // DigitalRead reads the value from a specified digital pin, either HIGH or LOW.
 func (ino *Goduino) DigitalRead(pin int) (value int, err error) {
 	// Check if pin is configured as input
-	if ino.board.Pins()[pin].Mode != Input {
+	if ino.board.Pins()[pin].Mode != Input && ino.board.Pins()[pin].Mode != Pullup {
+		ino.logger.Printf("Set PinMode force to Input!!! current mode : %d\r\n", ino.board.Pins()[pin].Mode)
 		if err = ino.PinMode(pin, Input); err != nil {
 			return
 		}

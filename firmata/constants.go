@@ -13,6 +13,14 @@ const (
 	Analog = 0x02
 	Pwm    = 0x03
 	Servo  = 0x04
+	Shift  = 0x05
+	I2C    = 0x06
+	Onewire = 0x07
+	Stepper = 0x08
+	Encoder = 0x09
+	//Serial = 0x0A // Need rename to avoid conflict
+	Pullup = 0x0B
+	//Ignore = 0x7F
 
 	// SPIConfig SPISubCommand = 0x10
 	// SPIComm   SPISubCommand = 0x20
@@ -57,6 +65,8 @@ const (
 
 // SysEx Commands
 const (
+	UltrasoundReport      SysExCommand = 0x08
+	NeopixelControl       SysExCommand = 0x18
 	Serial                SysExCommand = 0x60
 	AnalogMappingQuery    SysExCommand = 0x69
 	AnalogMappingResponse SysExCommand = 0x6A
@@ -79,9 +89,9 @@ const (
 
 func (c FirmataCommand) String() string {
 	switch {
-	case (c & 0xF0) == DigitalMessage:
+	case (c & 0xF0) == DigitalMessage: // After masking, check only DigitalMessage
 		return fmt.Sprintf("DigitalMessage (0x%x)", uint8(c))
-	case (c & 0xF0) == AnalogMessage:
+	case (c & 0xF0) == AnalogMessage: // After masking, check only AnalogMessage
 		return fmt.Sprintf("AnalogMessage (0x%x)", uint8(c))
 	case c == ReportAnalog:
 		return fmt.Sprintf("ReportAnalog (0x%x)", uint8(c))

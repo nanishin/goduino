@@ -9,6 +9,8 @@ import (
 	"math"
 	"os"
 	"time"
+	"strconv"
+	"strings"
 )
 
 // Errors
@@ -25,6 +27,7 @@ type Firmata struct {
 	ready             bool
 	analogMappingDone bool
 	capabilityDone    bool
+	ultrasoundDistance  string // interim definition, XXX need to change XXX
 	logger            *log.Logger
 }
 
@@ -53,6 +56,7 @@ func New() *Firmata {
 		pins:            []Pin{},
 		analogPins:      []int{},
 		connected:       false,
+		ultrasoundDistance: "", // interim definition, XXX need to change XXX
 		logger:          log.New(os.Stdout, "[firmata] ", log.Ltime),
 	}
 
@@ -125,15 +129,18 @@ func (f *Firmata) SetPinMode(pin int, mode int) error {
 
 // DigitalWrite writes value to pin.
 func (f *Firmata) DigitalWrite(pin int, value int) error {
+	//f.logger.Printf("DigitalWrite pin %d, value %d", pin, value)
 	port := byte(math.Floor(float64(pin) / 8))
+	//f.logger.Printf("DigitalWrite port %v", port)
 	portValue := byte(0)
 	f.pins[pin].Value = value
 	// Build command
 	for i := byte(0); i < 8; i++ {
+		//f.logger.Printf("DigitalWrite 8*port+i : port - %v, i - %d, sum - %d", port, i, 8*port+i)
 		if (int)(8*port+i) < len(f.pins) {
-            if f.pins[8*port+i].Value != 0 {
-                portValue = portValue | (1 << i)
-            }
+			if f.pins[8*port+i].Value != 0 {
+				portValue = portValue | (1 << i)
+			}
 		}
 	}
 	return f.sendCommand([]byte{byte(DigitalMessage) | port, portValue & 0x7F, (portValue >> 7) & 0x7F})
@@ -183,6 +190,21 @@ func (f *Firmata) AnalogMappingQuery() error {
 	return f.writeSysex([]byte{byte(AnalogMappingQuery)})
 }
 
+// UltrasoundReport sends the UltrasoundReport sysex code.
+func (f *Firmata) UltrasoundReport(pin int) error {
+	return f.writeSysex([]byte{byte(UltrasoundReport), byte(pin)})
+}
+
+// UltrasoundReport sends the UltrasoundReport sysex code.
+func (f *Firmata) UltrasoundDistance() string {
+	return f.ultrasoundDistance
+}
+
+// NeopixelControl sends the NeopixelControl sysex code.
+func (f *Firmata) NeopixelControl(pin int, numpixels int, color int, state int) error {
+	return f.writeSysex([]byte{byte(NeopixelControl), byte(pin), byte(numpixels), byte(color), byte(state)})
+}
+
 // ReportDigital enables or disables digital reporting for pin, a non zero
 // state enables reporting
 func (f *Firmata) ReportDigital(pin int, state int) error {
@@ -224,6 +246,7 @@ func (f *Firmata) togglePinReporting(pin int, state int, mode byte) error {
 		state = 0
 	}
 
+	f.logger.Printf("togglePinReporting pin %d, state %d, mode 0x%x", pin, state, mode)
 	if err := f.write([]byte{byte(mode) | byte(pin), byte(state)}); err != nil {
 		return err
 	}
@@ -316,6 +339,7 @@ func (f *Firmata) process() {
 				}
 			}
 		case DigitalMessageRangeStart <= cmd && DigitalMessageRangeEnd >= cmd:
+			f.logger.Printf("DigitalMessage received!!!")
 			buf, err := f.read(2)
 			if err != nil {
 				f.logger.Panic(err)
@@ -326,9 +350,12 @@ func (f *Firmata) process() {
 			for i := 0; i < 8; i++ {
 				pinNumber := int((8*byte(port) + byte(i)))
 				if len(f.pins) > pinNumber {
-					if f.pins[pinNumber].Mode == Input {
+					if f.pins[pinNumber].Mode == Input || f.pins[pinNumber].Mode == Pullup {
+						f.logger.Printf("portValue : %x", portValue)
+						f.logger.Printf("i : %v", i)
 						f.pins[pinNumber].Value = int((portValue >> (byte(i) & 0x07)) & 0x01)
-						f.logger.Printf("DigitalRead%v", pinNumber)
+						f.logger.Printf("DigitalRead : %v", pinNumber)
+						f.logger.Printf("f.pins[%v].Value : %v", pinNumber, f.pins[pinNumber].Value)
 					}
 				}
 			}
@@ -360,7 +387,7 @@ func (f *Firmata) parseSysEx(data []byte) {
 		for _, val := range data[:(len(data) - 5)] {
 			if val == 127 {
 				modes := []int{}
-				for _, mode := range []int{Input, Output, Analog, Pwm, Servo} {
+				for _, mode := range []int{Input, Output, Analog, Pwm, Servo, Pullup} {
 					if (supportedModes & (1 << byte(mode))) != 0 {
 						modes = append(modes, mode)
 					}
@@ -430,9 +457,15 @@ func (f *Firmata) parseSysEx(data []byte) {
 		f.FirmwareName = string(name[:])
 		f.logger.Printf("Firmware: %s", f.FirmwareName)
 		f.CapabilitiesQuery()
-	case StringData:
+	case StringData: // Currently it's used just for ultrasound distance!!!
 		str := data[:]
-		f.logger.Printf("StringData%v", string(str[:len(str)-1]))
+		string_data := strings.Split(string(str[:len(str)-1]), "\r")
+		f.logger.Printf("StringData%v", string_data[0])
+		distance, err := strconv.Atoi(string_data[0])
+		if err != nil {
+			f.logger.Printf("strconv.Atoi error %v", err)
+		}
+		f.ultrasoundDistance = fmt.Sprintf("%v", distance / 29.0 / 2.0) // convert to CM
 	}
 }
 

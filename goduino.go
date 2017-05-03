@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"time"
+	//"strconv"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 	Analog = firmata.Analog
 	Pwm    = firmata.Pwm
 	Servo  = firmata.Servo
+	Pullup = firmata.Pullup
 )
 
 type firmataBoard interface {
@@ -30,9 +32,12 @@ type firmataBoard interface {
 	I2cRead(int, int) error
 	I2cWrite(int, []byte) error
 	I2cConfig(int) error
+	PinStateQuery(int) error
 	ServoConfig(int, int, int) error
+	UltrasoundReport(int) error
+	UltrasoundDistance() string
+	NeopixelControl(int, int, int, int) error
 }
-
 // Arduino Firmata client for golang
 type Goduino struct {
 	name    string
@@ -148,6 +153,22 @@ func (ino *Goduino) PwmWrite(pin int, level byte) (err error) {
 	return
 }
 
+// UltrasoundReport read distance from Ultrasound sensor.
+func (ino *Goduino) UltrasoundReport(pin int) (err error) {
+	ino.logger.Printf("UltrasoundReport(%d)\r\n", pin)
+	err = ino.board.UltrasoundReport(pin)
+	return
+}
+
+// UltrasoundDistance returns the distance cm unit
+func (ino *Goduino) UltrasoundDistance() string { return ino.board.UltrasoundDistance() }
+
+// NeopixelControl set state of neopixel.
+func (ino *Goduino) NeopixelControl(pin int, numpixels int, color int, state int) (err error) {
+	ino.logger.Printf("NeopixelControl(%d, %d, %d, %d)\r\n", pin, numpixels, color, state)
+	err = ino.board.NeopixelControl(pin, numpixels, color, state)
+	return
+}
 
 // PinMode configures the specified pin to behave either as an input or an output.
 func (ino *Goduino) PinMode(pin, mode int) error {
@@ -174,6 +195,16 @@ func (ino *Goduino) PinMode(pin, mode int) error {
 			return err
 		}
 		if err := ino.board.ReportAnalog(pin, 1); err != nil {
+			return err
+		}
+		<-time.After(10 * time.Millisecond)
+	// If mode == Pullup
+	case Pullup:
+		// Set pin mode
+		if err := ino.board.SetPinMode(pin, mode); err != nil {
+			return err
+		}
+		if err := ino.board.ReportDigital(pin, 1); err != nil {
 			return err
 		}
 		<-time.After(10 * time.Millisecond)
@@ -213,6 +244,8 @@ func (m PinMode) String() string {
 		return "PWM"
 	case m == Servo:
 		return "SERVO"
+	case m == Pullup:
+		return "PULLUP"
 	}
 	return "UNKNOWN"
 }
