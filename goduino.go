@@ -30,6 +30,7 @@ type firmataBoard interface {
 	I2cRead(int, int) error
 	I2cWrite(int, []byte) error
 	I2cConfig(int) error
+	ServoConfig(int, int, int) error
 }
 
 // Arduino Firmata client for golang
@@ -100,6 +101,53 @@ func (ino *Goduino) Port() string { return ino.port }
 
 // Name returns the  FirmataAdaptors name
 func (ino *Goduino) Name() string { return ino.name }
+
+// ServoConfig sets the pulse width in microseconds for a pin attached to a servo
+func (ino *Goduino) ServoConfig(pin, min, max int) error {
+	//p, err := strconv.Atoi(pin)
+	//if err != nil {
+	//	return err
+	//}
+
+	return ino.board.ServoConfig(pin, max, min)
+}
+
+// ServoWrite writes the 0-180 degree angle to the specified pin.
+func (ino *Goduino) ServoWrite(pin int, angle byte) (err error) {
+	//p, err := strconv.Atoi(pin)
+	//if err != nil {
+	//	return err
+	//}
+
+	if ino.board.Pins()[pin].Mode != firmata.Servo {
+		err = ino.board.SetPinMode(pin, firmata.Servo)
+		if err != nil {
+			return err
+		}
+	}
+	ino.logger.Printf("ServoWrite(%d, %d)\r\n", pin, int(angle))
+	err = ino.board.AnalogWrite(pin, int(angle))
+	return
+}
+
+// PwmWrite writes the 0-254 value to the specified pin
+func (ino *Goduino) PwmWrite(pin int, level byte) (err error) {
+	//p, err := strconv.Atoi(pin)
+	//if err != nil {
+	//	return err
+	//}
+
+	if ino.board.Pins()[pin].Mode != firmata.Pwm {
+		err = ino.board.SetPinMode(pin, firmata.Pwm)
+		if err != nil {
+			return err
+		}
+	}
+	ino.logger.Printf("PwmWrite(%d, %d)\r\n", pin, int(level))
+	err = ino.board.AnalogWrite(pin, int(level))
+	return
+}
+
 
 // PinMode configures the specified pin to behave either as an input or an output.
 func (ino *Goduino) PinMode(pin, mode int) error {
