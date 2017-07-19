@@ -2,7 +2,7 @@ package goduino
 
 import (
 	"fmt"
-	"github.com/argandas/goduino/firmata"
+	"github.com/nanishin/goduino/firmata"
 	"github.com/tarm/serial"
 	"io"
 	"log"
