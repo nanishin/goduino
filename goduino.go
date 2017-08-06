@@ -37,6 +37,19 @@ type firmataBoard interface {
 	UltrasoundReport(int) error
 	UltrasoundDistance() string
 	NeopixelControl(int, int, int, int) error
+	DhtReport(int) error
+	DhtHumidity() string
+	DhtTempC() string
+	DhtTempF() string
+	DhtHeatIndexF() string
+	DhtHeatIndexC() string
+	PhReport(int) error
+	PhValue() string
+	EcReport(int, int) error
+	EcAverage() string
+	EcVoltage() string
+	EcTemperature() string
+	EcCurrent() string
 }
 // Arduino Firmata client for golang
 type Goduino struct {
@@ -169,6 +182,57 @@ func (ino *Goduino) NeopixelControl(pin int, numpixels int, color int, state int
 	err = ino.board.NeopixelControl(pin, numpixels, color, state)
 	return
 }
+
+// DhtReport read temperature and humidity from DHT sensor.
+func (ino *Goduino) DhtReport(pin int) (err error) {
+	ino.logger.Printf("DhtReport(%d)\r\n", pin)
+	err = ino.board.DhtReport(pin)
+	return
+}
+
+// DhtHumidity returns dht humidity value
+func (ino *Goduino) DhtHumidity() string { return ino.board.DhtHumidity() }
+
+// DhtTempC returns dht temperature celsius value
+func (ino *Goduino) DhtTempC() string { return ino.board.DhtTempC() }
+
+// DhtTempF returns dht temperature fahrenheit value
+func (ino *Goduino) DhtTempF() string { return ino.board.DhtTempF() }
+
+// DhtHeatIndexF returns dht heat index fahrenheit value
+func (ino *Goduino) DhtHeatIndexF() string { return ino.board.DhtHeatIndexF() }
+
+// DhtHeatIndexC returns dht heat index celsius value
+func (ino *Goduino) DhtHeatIndexC() string { return ino.board.DhtHeatIndexC() }
+
+// PhReport read ph from ph meter
+func (ino *Goduino) PhReport(pin int) (err error) {
+	ino.logger.Printf("PhReport(%d)\r\n", pin)
+	err = ino.board.PhReport(pin)
+	return
+}
+
+// PhValue returns ph value
+func (ino *Goduino) PhValue() string { return ino.board.PhValue() }
+
+// EcReport read ec from ec meter
+func (ino *Goduino) EcReport(ec_pin int, temp_pin int) (err error) {
+	ino.logger.Printf("EcReport(%d, %d)\r\n", ec_pin, temp_pin)
+	err = ino.board.EcReport(ec_pin, temp_pin)
+	return
+}
+
+// EcAverage returns ec average
+func (ino *Goduino) EcAverage() string { return ino.board.EcAverage() }
+
+// EcVoltage returns ec voltage
+func (ino *Goduino) EcVoltage() string { return ino.board.EcVoltage() }
+
+// EcTemperature returns ec temperature
+func (ino *Goduino) EcTemperature() string { return ino.board.EcTemperature() }
+
+// EcCurrent returns ec currrent
+func (ino *Goduino) EcCurrent() string { return ino.board.EcCurrent() }
 
 // PinMode configures the specified pin to behave either as an input or an output.
 func (ino *Goduino) PinMode(pin, mode int) error {

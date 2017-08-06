@@ -28,6 +28,16 @@ type Firmata struct {
 	analogMappingDone bool
 	capabilityDone    bool
 	ultrasoundDistance  string // interim definition, XXX need to change XXX
+	dht_humidity  string // interim definition, XXX need to change XXX
+	dht_temp_c  string // interim definition, XXX need to change XXX
+	dht_temp_f  string // interim definition, XXX need to change XXX
+	dht_heat_index_f  string // interim definition, XXX need to change XXX
+	dht_heat_index_c  string // interim definition, XXX need to change XXX
+	phValue  string // interim definition, XXX need to change XXX
+	ecAverage  string // interim definition, XXX need to change XXX
+	ecVoltage  string // interim definition, XXX need to change XXX
+	ecTemperature  string // interim definition, XXX need to change XXX
+	ecCurrent  string // interim definition, XXX need to change XXX
 	logger            *log.Logger
 }
 
@@ -57,6 +67,16 @@ func New() *Firmata {
 		analogPins:      []int{},
 		connected:       false,
 		ultrasoundDistance: "", // interim definition, XXX need to change XXX
+		dht_humidity: "", // interim definition, XXX need to change XXX
+		dht_temp_c: "", // interim definition, XXX need to change XXX
+		dht_temp_f: "", // interim definition, XXX need to change XXX
+		dht_heat_index_f: "", // interim definition, XXX need to change XXX
+		dht_heat_index_c: "", // interim definition, XXX need to change XXX
+		phValue: "", // interim definition, XXX need to change XXX
+		ecAverage: "", // interim definition, XXX need to change XXX
+		ecVoltage: "", // interim definition, XXX need to change XXX
+		ecTemperature: "", // interim definition, XXX need to change XXX
+		ecCurrent: "", // interim definition, XXX need to change XXX
 		logger:          log.New(os.Stdout, "[firmata] ", log.Ltime),
 	}
 
@@ -195,7 +215,7 @@ func (f *Firmata) UltrasoundReport(pin int) error {
 	return f.writeSysex([]byte{byte(UltrasoundReport), byte(pin)})
 }
 
-// UltrasoundReport sends the UltrasoundReport sysex code.
+// UltrasoundDistance returns distance measured by ultrasound.
 func (f *Firmata) UltrasoundDistance() string {
 	return f.ultrasoundDistance
 }
@@ -203,6 +223,71 @@ func (f *Firmata) UltrasoundDistance() string {
 // NeopixelControl sends the NeopixelControl sysex code.
 func (f *Firmata) NeopixelControl(pin int, numpixels int, color int, state int) error {
 	return f.writeSysex([]byte{byte(NeopixelControl), byte(pin), byte(numpixels), byte(color), byte(state)})
+}
+
+// DhtReport sends the DhtReport sysex code.
+func (f *Firmata) DhtReport(pin int) error {
+	return f.writeSysex([]byte{byte(DhtReport), byte(pin)})
+}
+
+// DhtHumidity get humidity value.
+func (f *Firmata) DhtHumidity() string {
+	return f.dht_humidity
+}
+
+// DhtTempC get temperature celsius value.
+func (f *Firmata) DhtTempC() string {
+	return f.dht_temp_c
+}
+
+// DhtTempF get temperature fahrenheit value.
+func (f *Firmata) DhtTempF() string {
+	return f.dht_temp_f
+}
+
+// DhtHeatIndexF get heat index fahrenheit value.
+func (f *Firmata) DhtHeatIndexF() string {
+	return f.dht_heat_index_f
+}
+
+// DhtHeatIndexC get heat index celsius value.
+func (f *Firmata) DhtHeatIndexC() string {
+	return f.dht_heat_index_c
+}
+
+// PhReport sends the PhReport sysex code.
+func (f *Firmata) PhReport(pin int) error {
+	return f.writeSysex([]byte{byte(PhReport), byte(pin)})
+}
+
+// PhValue get ph value.
+func (f *Firmata) PhValue() string {
+	return f.phValue
+}
+
+// EcReport sends the EcReport sysex code.
+func (f *Firmata) EcReport(ec_pin int, temp_pin int) error {
+	return f.writeSysex([]byte{byte(EcReport), byte(ec_pin), byte(temp_pin)})
+}
+
+// EcAverage get ec average.
+func (f *Firmata) EcAverage() string {
+	return f.ecAverage
+}
+
+// EcVoltage get ec voltage.
+func (f *Firmata) EcVoltage() string {
+	return f.ecVoltage
+}
+
+// EcTemperature get ec temperature.
+func (f *Firmata) EcTemperature() string {
+	return f.ecTemperature
+}
+
+// EcCurrent get ec current.
+func (f *Firmata) EcCurrent() string {
+	return f.ecCurrent
 }
 
 // ReportDigital enables or disables digital reporting for pin, a non zero
@@ -457,16 +542,32 @@ func (f *Firmata) parseSysEx(data []byte) {
 		f.FirmwareName = string(name[:])
 		f.logger.Printf("Firmware: %s", f.FirmwareName)
 		f.CapabilitiesQuery()
-	case StringData: // Currently it's used just for ultrasound distance!!!
+	case StringData: // For several external sensors
 		str := data[:]
 		string_data := strings.Split(string(str[:len(str)-1]), "\r")
 		f.logger.Printf("StringData%v", string_data[0])
-		distance, err := strconv.Atoi(string_data[0])
-		if err != nil {
-			f.logger.Printf("strconv.Atoi error %v", err)
+		dispatch_type := strings.Split(string_data[0], ",")
+		if dispatch_type[0] == "HC-SR04" {
+			distance, err := strconv.Atoi(string_data[0])
+			if err != nil {
+				f.logger.Printf("strconv.Atoi error %v", err)
+			}
+			f.ultrasoundDistance = fmt.Sprintf("%v", distance / 29.0 / 2.0) // convert to CM
+		} else if dispatch_type[0] == "DHT" {
+			f.dht_humidity = dispatch_type[1]
+			f.dht_temp_c = dispatch_type[2]
+			f.dht_temp_f = dispatch_type[3]
+			f.dht_heat_index_f = dispatch_type[4]
+			f.dht_heat_index_c = dispatch_type[5]
+		} else if dispatch_type[0] == "PH" {
+			f.phValue = dispatch_type[1]
+		} else if dispatch_type[0] == "EC" {
+			f.ecAverage = dispatch_type[1]
+			f.ecVoltage = dispatch_type[2]
+			f.ecTemperature = dispatch_type[3]
+			f.ecCurrent = dispatch_type[4]
 		}
-		f.ultrasoundDistance = fmt.Sprintf("%v", distance / 29.0 / 2.0) // convert to CM
-	}
+}
 }
 
 func (f *Firmata) printByteArray(title string, data []uint8) {

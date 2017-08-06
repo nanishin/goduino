@@ -67,6 +67,9 @@ const (
 const (
 	UltrasoundReport      SysExCommand = 0x08
 	NeopixelControl       SysExCommand = 0x18
+	DhtReport	          SysExCommand = 0x28
+	PhReport	          SysExCommand = 0x38
+	EcReport	          SysExCommand = 0x48
 	Serial                SysExCommand = 0x60
 	AnalogMappingQuery    SysExCommand = 0x69
 	AnalogMappingResponse SysExCommand = 0x6A
