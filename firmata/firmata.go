@@ -578,6 +578,8 @@ func (f *Firmata) parseSysEx(data []byte) {
 			f.ecVoltage = dispatch_type[2]
 			f.ecTemperature = dispatch_type[3]
 			f.ecCurrent = dispatch_type[4]
+		} else if dispatch_type[0] == "LEAK" {
+			f.leakStatus = dispatch_type[1]
 		}
 }
 }
