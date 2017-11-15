@@ -50,6 +50,8 @@ type firmataBoard interface {
 	EcVoltage() string
 	EcTemperature() string
 	EcCurrent() string
+    LeakReport(int) error
+	LeakStatus() string
 }
 // Arduino Firmata client for golang
 type Goduino struct {
@@ -233,6 +235,16 @@ func (ino *Goduino) EcTemperature() string { return ino.board.EcTemperature() }
 
 // EcCurrent returns ec currrent
 func (ino *Goduino) EcCurrent() string { return ino.board.EcCurrent() }
+
+// LeakReport read leak status from liquid leak sensor
+func (ino *Goduino) LeakReport(pin int) (err error) {
+	ino.logger.Printf("LeakReport(%d)\r\n", pin)
+	err = ino.board.LeakReport(pin)
+	return
+}
+
+// LeakStatus returns leak status
+func (ino *Goduino) LeakStatus() string { return ino.board.LeakStatus() }
 
 // PinMode configures the specified pin to behave either as an input or an output.
 func (ino *Goduino) PinMode(pin, mode int) error {

@@ -38,6 +38,7 @@ type Firmata struct {
 	ecVoltage  string // interim definition, XXX need to change XXX
 	ecTemperature  string // interim definition, XXX need to change XXX
 	ecCurrent  string // interim definition, XXX need to change XXX
+	leakStatus  string // interim definition, XXX need to change XXX
 	logger            *log.Logger
 }
 
@@ -77,6 +78,7 @@ func New() *Firmata {
 		ecVoltage: "", // interim definition, XXX need to change XXX
 		ecTemperature: "", // interim definition, XXX need to change XXX
 		ecCurrent: "", // interim definition, XXX need to change XXX
+		leakStatus: "", // interim definition, XXX need to change XXX
 		logger:          log.New(os.Stdout, "[firmata] ", log.Ltime),
 	}
 
@@ -288,6 +290,16 @@ func (f *Firmata) EcTemperature() string {
 // EcCurrent get ec current.
 func (f *Firmata) EcCurrent() string {
 	return f.ecCurrent
+}
+
+// LeakReport sends the LeakReport sysex code.
+func (f *Firmata) LeakReport(pin int) error {
+	return f.writeSysex([]byte{byte(LeakReport), byte(pin)})
+}
+
+// LeakStatus get leak status.
+func (f *Firmata) LeakStatus() string {
+	return f.leakStatus
 }
 
 // ReportDigital enables or disables digital reporting for pin, a non zero

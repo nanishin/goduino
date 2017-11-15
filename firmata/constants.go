@@ -70,6 +70,7 @@ const (
 	DhtReport	          SysExCommand = 0x28
 	PhReport	          SysExCommand = 0x38
 	EcReport	          SysExCommand = 0x48
+	LeakReport	          SysExCommand = 0x58
 	Serial                SysExCommand = 0x60
 	AnalogMappingQuery    SysExCommand = 0x69
 	AnalogMappingResponse SysExCommand = 0x6A
